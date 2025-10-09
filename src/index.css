@@ -1,0 +1,14 @@
+/* simple styles */
+*{box-sizing:border-box}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;margin:0;padding:0;background:#f4f6f8;color:#111}
+.container{max-width:1000px;margin:24px auto;padding:16px;background:#fff;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,0.06)}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+nav a{margin-right:12px;text-decoration:none;color:#0366d6}
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.card{border:1px solid #e6e9ee;padding:12px;border-radius:8px;background:#fff}
+.button{display:inline-block;padding:8px 12px;border-radius:6px;border:0;background:#0366d6;color:#fff;cursor:pointer}
+.input{padding:8px;border:1px solid #d1d5db;border-radius:6px;width:100%}
+.pager{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:12px}
+.product-gallery img{max-width:100%;height:auto;border-radius:6px}
+.cart-line{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.small{font-size:0.9rem;color:#555}
