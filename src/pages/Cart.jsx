@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { mockApi } from '../api/mockApi'
 import { auth } from '../utils/auth'
 
@@ -33,17 +34,15 @@ export default function Cart({ onCartChange }){
     save({ ...cart, lines: newLines })
   }
 
-  const total = cart.lines.reduce((s,l)=> s + (l.product.price * l.qty), 0)
-
-  if(!cart) return <div className="container">Cargando...</div>
+  const total = cart.lines.reduce((s, l) => s + (l.product.price * l.qty), 0)
 
   return (
     <div className="container">
-      <div className="header"><h2>Carrito</h2></div>
+      <div className="header"><h2>Carrito de Compras</h2></div>
       {cart.lines.length===0 ? <div>Tu carrito está vacío</div> : (
         <div style={{display:'grid',gap:8}}>
           {cart.lines.map(line => (
-            <div key={line.product.id} className="card cart-line">
+            <div key={line.product.id} className="card cart-line" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
               <div style={{display:'flex',gap:12,alignItems:'center'}}>
                 <img src={line.product.images[0]} alt="thumb" style={{width:80,height:60,objectFit:'cover'}} />
                 <div>
@@ -66,7 +65,11 @@ export default function Cart({ onCartChange }){
 
           <div style={{textAlign:'right'}} className="card">
             <div><strong>Total: ${total}</strong></div>
-            <div style={{marginTop:8}}><button className="button">Ir a Checkout (no implementado por el momento)</button></div>
+            <div style={{marginTop:8}}>
+              <Link to="/checkout" className="button">
+                Pagar ahora
+              </Link>
+            </div>
           </div>
         </div>
       )}

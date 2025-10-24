@@ -27,10 +27,14 @@ export const mockApi = {
     return { token, user: { id: user.id, email } }
   },
 
-  async getProducts({ page = 1, perPage = 10, category = null } = {}){
+  async getProducts({ page = 1, perPage = 10, category = null, search = null } = {}){
     await wait(150)
     let items = PRODUCTS.slice()
+    
     if(category) items = items.filter(p => p.category === category)
+    
+    if(search) items = items.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
+    
     const total = items.length
     const start = (page - 1) * perPage
     const paged = items.slice(start, start + perPage)
@@ -48,15 +52,35 @@ export const mockApi = {
   async getCart(token){
     await wait(100)
     const all = JSON.parse(localStorage.getItem(CARTS_KEY) || '{}')
-    const key = token || 'anon'
-    return all[key] || { lines: [] }
+    const userKey = token ? atob(token).split(':')[1] : 'guest'
+    return all[userKey] || { lines: [] }
   },
 
   async updateCart(token, cart){
-    await wait(100)
+    await wait(50)
     const all = JSON.parse(localStorage.getItem(CARTS_KEY) || '{}')
-    const key = token || 'anon'
-    all[key] = cart; localStorage.setItem(CARTS_KEY, JSON.stringify(all))
-    return cart
+    const userKey = token ? atob(token).split(':')[1] : 'guest'
+    all[userKey] = cart
+    localStorage.setItem(CARTS_KEY, JSON.stringify(all))
+    return true
+  },
+
+  async placeOrder(token, orderDetails){
+    await wait(1000) 
+    
+    if(!orderDetails.shipping.address) {
+      throw { message: 'La dirección es requerida' }
+    }
+    
+    const all = JSON.parse(localStorage.getItem(CARTS_KEY) || '{}')
+    const userKey = token ? atob(token).split(':')[1] : 'guest'
+    all[userKey] = { lines: [] } 
+    localStorage.setItem(CARTS_KEY, JSON.stringify(all))
+    
+    const orderId = `ECOM-${Date.now()}`
+    
+    console.log("Pedido guardado:", orderId, orderDetails)
+    
+    return { orderId }
   }
 }
