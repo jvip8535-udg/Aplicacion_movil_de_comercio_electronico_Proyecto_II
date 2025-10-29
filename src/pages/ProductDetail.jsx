@@ -1,15 +1,73 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { mockApi } from '../api/mockApi'
+import { auth } from '../utils/auth'
+
+function StarRating({ rating }) {
+  return (
+    <div>
+      {Array.from({ length: 5 }, (_, i) => (
+        <span key={i} style={{ color: i < rating ? '#ffc107' : '#e0e0e0', fontSize: '1.2em' }}>
+          ★
+        </span>
+      ))}
+    </div>
+  )
+}
 
 export default function ProductDetail({ onAdd }){
   const { id } = useParams()
   const [product,setProduct] = useState(null)
   const [selectedImg,setSelectedImg] = useState(0)
+  const token = auth.getToken()
 
-  useEffect(()=>{ load() },[id])
+  const [reviews, setReviews] = useState([])
+  const [newRating, setNewRating] = useState(5)
+  const [newComment, setNewComment] = useState('')
+  const [loadingReviews, setLoadingReviews] = useState(false)
+
+  useEffect(()=>{
+    load()
+    window.scrollTo(0, 0)
+  },[id])
+  
   async function load(){
-    try{ const p = await mockApi.getProductById(id); setProduct(p); setSelectedImg(0) }catch(e){ }
+    setLoadingReviews(true)
+    try{ 
+      const [p, r] = await Promise.all([
+        mockApi.getProductById(id),
+        mockApi.getReviews(id)
+      ])
+      setProduct(p)
+      setReviews(r)
+      setSelectedImg(0)
+    } catch(e){ 
+      console.error("Error al cargar", e)
+    }
+    setLoadingReviews(false)
+  }
+
+  async function handleSubmitReview(e) {
+    e.preventDefault()
+    if (!newComment.trim()) {
+      alert("Por favor escribe un comentario.")
+      return
+    }
+    setLoadingReviews(true)
+    try {
+      await mockApi.addReview(token, {
+        productId: id,
+        rating: newRating,
+        comment: newComment
+      })
+      setNewComment('')
+      setNewRating(5)
+      const r = await mockApi.getReviews(id)
+      setReviews(r)
+    } catch (err) {
+      alert("Error al enviar reseña: " + err.message)
+    }
+    setLoadingReviews(false)
   }
 
   if(!product) return <div className="container">Cargando...</div>
@@ -42,6 +100,56 @@ export default function ProductDetail({ onAdd }){
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div style={{marginTop: 24}}>
+        <hr />
+        <h3 style={{marginTop: 16}}>Valoraciones y Reseñas</h3>
+
+        {token && (
+          <form onSubmit={handleSubmitReview} className="card" style={{ marginBottom: 16, display: 'grid', gap: 12 }}>
+            <h4>Deja tu reseña</h4>
+            <div>
+              <label>Calificación</label>
+              <select className="input" value={newRating} onChange={e => setNewRating(e.target.value)}>
+                <option value={5}>5 Estrellas</option>
+                <option value={4}>4 Estrellas</option>
+                <option value={3}>3 Estrellas</option>
+                <option value={2}>2 Estrellas</option>
+                <option value={1}>1 Estrella</option>
+              </select>
+            </div>
+            <div>
+              <label>Comentario</label>
+              <textarea 
+                className="input" 
+                rows="3" 
+                value={newComment} 
+                onChange={e => setNewComment(e.target.value)}
+                placeholder="Escribe tu opinión sobre el producto..."
+              ></textarea>
+            </div>
+            <button className="button" type="submit" disabled={loadingReviews} style={{justifySelf: 'start'}}>
+              {loadingReviews ? "Enviando..." : "Enviar Reseña"}
+            </button>
+          </form>
+        )}
+
+        {loadingReviews && reviews.length === 0 && <div className="card">Cargando reseñas...</div>}
+        {!loadingReviews && reviews.length === 0 && <div className="card">Este producto aún no tiene reseñas.</div>}
+        
+        <div style={{ display: 'grid', gap: 12 }}>
+          {reviews.map(review => (
+            <div key={review.id} className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <strong>{review.email}</strong>
+                <span className="small">{new Date(review.date).toLocaleDateString()}</span>
+              </div>
+              <StarRating rating={review.rating} />
+              <p style={{ margin: '8px 0 0' }}>{review.comment}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>

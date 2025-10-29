@@ -7,6 +7,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Checkout from './pages/Checkout'
 import Confirmation from './pages/Confirmation'
+import Profile from './pages/Profile'
 import { mockApi } from './api/mockApi'
 import { auth } from './utils/auth'
 
@@ -36,7 +37,7 @@ export default function App(){
     alert('Producto agregado al carrito')
   }
 
-  function handleLogout(){ auth.logout(); setToken(null); navigate('/login') }
+  function handleLogout(){ auth.logout(); setToken(null); setCart({ lines: [] }); navigate('/login') }
   
   function handleOrderPlaced(){
     setCart({ lines: [] })
@@ -50,7 +51,11 @@ export default function App(){
           <Link to="/">Catálogo</Link>
           <Link to="/cart">Carrito ({cart.lines.reduce((s,l)=> s+l.qty, 0)})</Link> 
           {token ? (
-            <><span style={{marginLeft:12}}>Hola {auth.getUser()?.email}</span> <button onClick={handleLogout} style={{marginLeft:8}}>Cerrar sesión</button></>
+            <>
+              <Link to="/profile">Mi Perfil</Link> 
+              <span style={{marginLeft:12}}>Hola {auth.getUser()?.email}</span> 
+              <button onClick={handleLogout} style={{marginLeft:8}}>Cerrar sesión</button>
+            </>
           ) : (
             <><Link to="/login">Entrar</Link> <Link to="/register">Registro</Link></>
           )}
@@ -65,6 +70,7 @@ export default function App(){
         <Route path="/register" element={<Register />} />
         <Route path="/checkout" element={<Checkout onOrderPlaced={handleOrderPlaced} />} />
         <Route path="/confirmation/:orderId" element={<Confirmation />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </div>
   )
