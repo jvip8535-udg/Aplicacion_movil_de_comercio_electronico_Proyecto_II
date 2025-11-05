@@ -10,16 +10,51 @@ export default function Checkout({ onOrderPlaced }) {
   const [zip, setZip] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('tarjeta')
   const [loading, setLoading] = useState(false)
+  
+  const [couponCode, setCouponCode] = useState('')
+  const [discount, setDiscount] = useState(0)
+  const [discountMessage, setDiscountMessage] = useState('')
+  
   const token = auth.getToken()
   const navigate = useNavigate()
 
   useEffect(() => {
     load()
-  }, [])
+  }, [token])
 
   async function load() {
-    const c = await mockApi.getCart(token)
-    setCart(c)
+    try {
+      const c = await mockApi.getCart(token)
+      setCart(c)
+
+      if (token) {
+        const p = await mockApi.getUserProfile(token)
+        if (p.address) {
+          setAddress(p.address)
+        }
+      }
+    } catch (err) {
+      console.error("Error al cargar datos de checkout:", err)
+      alert("Hubo un error al cargar tu perfil: " + err.message)
+    }
+  }
+  
+  async function handleApplyCoupon() {
+    setLoading(true)
+    setDiscountMessage('')
+    try {
+      const { success, discount, message } = await mockApi.validateCoupon(couponCode)
+      if (success) {
+        setDiscount(discount)
+        setDiscountMessage(`Cupón '${couponCode}' aplicado: ${discount}% de descuento.`)
+      } else {
+        setDiscount(0)
+        setDiscountMessage(message)
+      }
+    } catch (err) {
+      setDiscountMessage("Error al validar cupón.")
+    }
+    setLoading(false)
   }
 
   async function handleSubmit(e) {
@@ -33,7 +68,9 @@ export default function Checkout({ onOrderPlaced }) {
       const orderDetails = {
         cart,
         shipping: { address, city, zip },
-        payment: { method: paymentMethod }
+        payment: { method: paymentMethod },
+        coupon: discount > 0 ? couponCode : null,
+        discount: discount
       }
       const confirmation = await mockApi.placeOrder(token, orderDetails)
       
@@ -42,19 +79,30 @@ export default function Checkout({ onOrderPlaced }) {
       }
       
       navigate(`/confirmation/${confirmation.orderId}`)
+
     } catch (err) {
-      alert("Error al procesar el pago: " + err.message)
+      let errorMsg = "Error al procesar el pago."
+      if (err && err.message) {
+        errorMsg = err.message
+      } else if (typeof err === 'string') {
+        errorMsg = err
+      } else {
+        errorMsg = "Ocurrió un error desconocido al procesar el pago."
+        console.error("Error no capturado:", err)
+      }
+      alert(errorMsg)
       setLoading(false)
     }
   }
 
-  const total = cart.lines.reduce((s, l) => s + (l.product.price * l.qty), 0)
+  const subTotal = cart.lines.reduce((s, l) => s + (l.product.price * l.qty), 0)
+  const discountAmount = subTotal * (discount / 100)
+  const total = subTotal - discountAmount
 
   return (
     <div className="container">
       <div className="header"><h2>Checkout</h2></div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 16 }}>
-        {/* Columna de Formulario */}
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 12 }}>
           <h4>Dirección de Envío</h4>
           <input className="input" value={address} onChange={e => setAddress(e.target.value)} placeholder="Dirección" required />
@@ -63,28 +111,48 @@ export default function Checkout({ onOrderPlaced }) {
 
           <h4>Método de Pago</h4>
           <select className="input" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
-            <option value="tarjeta">Tarjeta de Crédito/Débito</option>
-            <option value="paypal">PayPal</option>
+            <option value="tarjeta">Tarjeta de Crédito/Débito </option>
+            <option value="paypal">PayPal </option>
           </select>
 
           <button className="button" type="submit" disabled={loading}>
-            {loading ? "Procesando pago..." : `Pagar $${total}`}
+            {loading ? "Procesando pago..." : `Pagar $${total.toFixed(2)}`}
           </button>
         </form>
 
-        {/* Columna de Resumen */}
-        <div className="card">
-          <h4>Resumen del Pedido</h4>
-          {cart.lines.map(line => (
-            <div key={line.product.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: '0.9em' }}>
-              <span>{line.product.name} (x{line.qty})</span>
-              <strong>${line.product.price * line.qty}</strong>
+        <div>
+          <div className="card" style={{ marginBottom: 16 }}>
+            <h4>Cupón de Descuento</h4>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input className="input" value={couponCode} onChange={e => setCouponCode(e.target.value)} placeholder="PROMO10" />
+              <button onClick={handleApplyCoupon} disabled={loading} style={{flexShrink: 0}}>Aplicar</button>
             </div>
-          ))}
-          <hr />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
-            <span>Total</span>
-            <strong>${total}</strong>
+            {discountMessage && <div className="small" style={{marginTop: 8, color: discount > 0 ? 'green' : 'red'}}>{discountMessage}</div>}
+          </div>
+
+          <div className="card">
+            <h4>Resumen del Pedido</h4>
+            {cart.lines.map(line => (
+              <div key={line.product.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: '0.9em' }}>
+                <span>{line.product.name} (x{line.qty})</span>
+                <strong>${line.product.price * line.qty}</strong>
+              </div>
+            ))}
+            <hr />
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Subtotal</span>
+              <strong>${subTotal.toFixed(2)}</strong>
+            </div>
+            {discount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'green' }}>
+                <span>Descuento ({discount}%)</span>
+                <strong>-${discountAmount.toFixed(2)}</strong>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginTop: 8 }}>
+              <span>Total</span>
+              <strong>${total.toFixed(2)}</strong>
+            </div>
           </div>
         </div>
       </div>

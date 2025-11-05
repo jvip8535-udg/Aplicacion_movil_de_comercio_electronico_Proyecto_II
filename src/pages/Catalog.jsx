@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import ProductCard from '../components/ProductCard'
 import Pagination from '../components/Pagination'
 import { mockApi } from '../api/mockApi'
+import { auth } from '../utils/auth'
 
 export default function Catalog({ onAdd }){
   const [products,setProducts]=useState([])
@@ -11,8 +12,28 @@ export default function Catalog({ onAdd }){
   const [categories,setCategories]=useState([])
   const [cat,setCat]=useState('')
   const [search, setSearch] = useState('')
+  
+  const [recommendations, setRecommendations] = useState([])
+  const token = auth.getToken()
 
   useEffect(()=>{ load() },[page, cat, search]) 
+  
+  useEffect(() => {
+    loadRecommendations()
+  }, [token])
+  
+  async function loadRecommendations() {
+    if (token) {
+      try {
+        const recs = await mockApi.getPersonalizedRecommendations(token)
+        setRecommendations(recs)
+      } catch (err) {
+        console.error(err)
+      }
+    } else {
+      setRecommendations([])
+    }
+  }
   
   async function load(){
     const res = await mockApi.getProducts({ page, perPage, category: cat || null, search: search || null }) 
@@ -21,6 +42,16 @@ export default function Catalog({ onAdd }){
 
   return (
     <div className="container">
+      {recommendations.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <h3>Recomendado para ti</h3>
+          <div className="product-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+            {recommendations.map(p => <ProductCard key={p.id} p={p} onAdd={onAdd} />)}
+          </div>
+          <hr style={{ marginTop: 24 }} />
+        </div>
+      )}
+
       <div className="header" style={{gap: 16, flexWrap: 'wrap'}}>
         <h2>Catálogo</h2>
         <div style={{display: 'flex', gap: 12, flexGrow: 1, justifyContent: 'flex-end'}}>

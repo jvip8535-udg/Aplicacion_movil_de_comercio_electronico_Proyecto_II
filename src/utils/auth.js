@@ -5,5 +5,11 @@ export const auth = {
   save(token, user){ localStorage.setItem(TOKEN_KEY, token); localStorage.setItem(USER_KEY, JSON.stringify(user)) },
   getToken(){ return localStorage.getItem(TOKEN_KEY) },
   getUser(){ return JSON.parse(localStorage.getItem(USER_KEY) || 'null') },
-  logout(){ localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY) }
+  logout(){ localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY) },
+
+  isAdmin() {
+    const user = this.getUser()
+    // Lógica de simulación de admin
+    return user && user.email === 'admin@demo.com'
+  }
 }

@@ -11,12 +11,21 @@ import Profile from './pages/Profile'
 import { mockApi } from './api/mockApi'
 import { auth } from './utils/auth'
 
+import AdminRoute from './components/AdminRoute'
+import AdminDashboard, { AdminHome } from './pages/admin/AdminDashboard'
+import AdminOrders from './pages/admin/AdminOrders'
+import AdminProducts from './pages/admin/AdminProducts'
+
 export default function App(){
   const [cart, setCart] = useState({ lines: [] })
   const [token, setToken] = useState(auth.getToken())
   const navigate = useNavigate()
 
-  useEffect(()=>{ loadCart() },[token])
+  useEffect(()=>{ 
+    loadCart() 
+
+  },[token])
+
   async function loadCart(){
     const c = await mockApi.getCart(token)
     setCart(c)
@@ -37,11 +46,18 @@ export default function App(){
     alert('Producto agregado al carrito')
   }
 
-  function handleLogout(){ auth.logout(); setToken(null); setCart({ lines: [] }); navigate('/login') }
+  function handleLogout(){ 
+    auth.logout(); 
+    setToken(null); 
+    setCart({ lines: [] }); 
+    navigate('/login') 
+  }
   
   function handleOrderPlaced(){
     setCart({ lines: [] })
   }
+
+  const isAdmin = auth.isAdmin()
 
   return (
     <div>
@@ -53,6 +69,7 @@ export default function App(){
           {token ? (
             <>
               <Link to="/profile">Mi Perfil</Link> 
+              {isAdmin && <Link to="/admin">Panel Admin</Link>}
               <span style={{marginLeft:12}}>Hola {auth.getUser()?.email}</span> 
               <button onClick={handleLogout} style={{marginLeft:8}}>Cerrar sesión</button>
             </>
@@ -71,6 +88,14 @@ export default function App(){
         <Route path="/checkout" element={<Checkout onOrderPlaced={handleOrderPlaced} />} />
         <Route path="/confirmation/:orderId" element={<Confirmation />} />
         <Route path="/profile" element={<Profile />} />
+
+        <Route path="/admin" element={<AdminRoute />}>
+          <Route element={<AdminDashboard />}>
+            <Route index element={<AdminHome />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="products" element={<AdminProducts />} />
+          </Route>
+        </Route>
       </Routes>
     </div>
   )
