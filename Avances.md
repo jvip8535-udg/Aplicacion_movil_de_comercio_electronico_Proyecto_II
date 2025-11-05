@@ -1,3 +1,55 @@
+Avances Sprint 4
+
+ECOM-11: Recomendaciones
+(Como usuario quiero recomendaciones personalizadas al iniciar sesión.)
+Avance: Esta funcionalidad se ha implementado en la página de catálogo.
+Componentes React:
+src/api/mockApi.js: Se creó la nueva función getPersonalizedRecommendations(token). Esta función simula la personalización analizando el historial de pedidos del usuario (ORDERS_KEY), contando las categorías de sus compras pasadas, e identificando su categoría más frecuente.
+src/pages/Catalog.jsx: Se modificó para llamar a la nueva función getPersonalizedRecommendations si un token de usuario existe. Los resultados se muestran en una nueva sección "Recomendado para ti" en la parte superior de la página, reutilizando el ProductCard.jsx.
+ECOM-12: Admin
+(Como administrador quiero un panel básico para manejar productos y ver órdenes)
+Avance: Esta historia se ha completado, incluyendo la refactorización más importante del proyecto.
+Componentes React:
+src/api/mockApi.js: Refactorización Crítica: La base de datos de productos se migró de un archivo estático (products.js) a localStorage (PRODUCTS_KEY). products.js ahora solo se usa una vez para inicializar la base de datos si está vacía.
+src/api/mockApi.js: Se crearon las funciones saveProduct (para crear/editar) y deleteProduct (para eliminar), que modifican directamente el PRODUCTS_KEY.
+src/utils/auth.js: Se añadió la función isAdmin() que simula un rol de administrador si el email es admin@demo.com.
+src/components/AdminRoute.jsx: Se creó un nuevo componente de ruta protegida que usa auth.isAdmin() para bloquear el acceso a usuarios no autorizados.
+src/pages/admin/: Se creó una nueva carpeta con tres componentes: AdminDashboard.jsx (layout), AdminOrders.jsx (lee todas las órdenes de ORDERS_KEY) y AdminProducts.jsx (un panel con formulario para Crear, Leer, Editar y Eliminar (CRUD) productos).
+src/App.jsx: Se añadió el enlace "Panel Admin" (visible solo para administradores) y las nuevas rutas protegidas.
+ECOM-14: Cupones
+(Como usuario quiero aplicar descuentos con cupones en el checkout)
+Avance: Esta funcionalidad se ha completado en el flujo de pago.
+Componentes React:
+src/api/mockApi.js: Se añadió una lista de cupones válidos (PROMO10) y una nueva función validateCoupon(code) que simula la validación de un cupón.
+src/pages/Checkout.jsx: Se modificó la UI para incluir un campo de texto "Aplicar Cupón" y un botón.
+src/pages/Checkout.jsx: La lógica del componente ahora guarda el porcentaje de descuento en el estado (discount). El cálculo del total se actualizó para restar el discountAmount del subTotal, mostrando el precio final al usuario en tiempo real.
+src/api/mockApi.js: La función placeOrder se actualizó para guardar el discount y el couponCode en los detalles del pedido, asegurando que el descuento quede registrado en el historial (ECOM-9).
+
+Avances Sprint 3
+
+ECOM-9: Historial-Pedidos
+(Como usuario quiero ver mi historial de pedidos y detales de cada pedido)
+Avances: esta historia se ha completado.
+Componentes React:
+src/api/mockApi.js: la función placeOrder del Sprint 2 fue modificada para ser persistente. Ahora, guarda una copia completa del pedido en una nueva clave de localStorage (ORDERS_KEY).
+src/api/mockApi.js: se creó la nueva función getOrders(token), que lee ORDERS_KEY y filtra los pedidos que pertenecen al usuario autenticado.
+src/pages/Profile.jsx: se creó esta nueva página (accesible desde “Mi Perfil” en la navegación) que llama a getOrders y muestra una lista detallada de todas las compras pasadas del usuario.
+ECOM-10: Perfil
+(Como usuario quiero manejar mi perfil (direcciones, métodos de pago guardados))
+Avance: esta historia se ha completado.
+Componentes React:
+src/App.jsx: se añadió un enlace <Link to=”/profile”>Mi Perfil</Link> en la barra de navegación, visible solo si el usuario ha iniciado sesión.
+src/pages/Profile.jsx: se incluyó una segunda sección para “Manejar Métodos de Pago”. Es un formulario simulado que permite al usuario añadir un tipo de tarjeta y los últimos cuatro dígitos, que se guardan en su perfil.
+src/api/mockApi.js: se crearon las funciones getUserProfile(token) y updateUserProfile(token, data) que leen y escriben los datos del perfil en la entrada del usuario dentro de USERS_KEY en localStorage.
+ECOM-13: Reseñas
+(Como usuario quiero ver valoraciones y dejar reseñas en productos)
+Avance: esta historia se ha completado.
+Componentes React:
+src/api/mockApi.js: se creó una nueva clave de localStorage (REVIEWS_KEY) para almacenar todas las reseñas. Se añadieron dos funciones: getReviews(productId) (para obtener reseñas de un producto) y addReview(token,reviewData) (para publicar una nueva reseña).
+src/pages/ProductDetail.jsx: esta página fue modificada. Ahora debajo de la información del producto, muestra dos nuevas secciones:
+1.	Formulario de reseñas: visible solo si el usuario está logueado (token existe). Permite seleccionar una calificación (1-5 estrellas) y escribir un comentario.
+2.	Lista de reseñas: muestra todas las reseñas existentes para ese producto, incluyendo la calificación en estrellas, el comentario y el email del autor.
+
 Avances Sprint 2:
 
 ECOM-5: Checkout
@@ -53,4 +105,3 @@ Avances: esta historia se ha completado con éxito.
 Componentes React:
 src/App.jsx: mantiene el estado principal del carrito (cart) y la función addToCart. Esta función maneja la lógica de negocio para añadir un nuevo producto o incrementar la cantidad de uno existente.
 src/pages/Cart.jsx: esta página consume la mockApi para obtener el carrito actual del usuario. Muestra un resumen detallado de las líneas del carrito, permitiendo al usuario incrementar (inc), decrementar (dec) o eliminar (remove) productos. Calcula y muestra el subtotal por línea y el total general.
-
